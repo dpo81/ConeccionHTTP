@@ -6,11 +6,19 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Xml;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.IOException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity implements Handler.Callback {
@@ -65,6 +73,14 @@ public class MainActivity extends AppCompatActivity implements Handler.Callback 
     public boolean handleMessage(Message msg) {
         if (msg.arg1 == 0) {
             texto.setText((String) msg.obj);
+
+            List<Persona> personas = parserXml((String) msg.obj);
+
+            Log.d("prueba debug parser xml", "inicio");
+            for (Persona p : personas) {
+                Log.d("prueba debug parser xml", p.toString());
+            }
+            Log.d("prueba debug parser xml", "fin");
         }
         if (msg.arg1 == 1) {
             byte[] bites = (byte[]) msg.obj;
@@ -72,4 +88,61 @@ public class MainActivity extends AppCompatActivity implements Handler.Callback 
         }
         return false;
     }
+
+    public List<Persona> parserXml(String xml) {
+        List<Persona> personas = new ArrayList<Persona>();
+        String tag;
+
+        // creamos el objeto parser
+        XmlPullParser parser = Xml.newPullParser();
+
+        // le pasamos un InputStream o un Reader (fuente de datos):
+        try {
+            parser.setInput(new StringReader(xml));
+
+            // iteramos al parser y leemos los eventos
+            int event = parser.getEventType();
+
+            while (event != XmlPullParser.END_DOCUMENT) {
+                switch (event) {
+                    case XmlPullParser.START_DOCUMENT:
+                        break;
+
+                    case XmlPullParser.START_TAG:
+                        tag= parser.getName();
+
+                        if (tag.equals("Persona")){
+                            //Log.d("prueba debug parser xml", "tag persona encontrado");
+                            Persona persona = new Persona();
+
+                            persona.setNombre(parser.getAttributeValue(null, "nombre"));
+                            persona.setEdad(Integer.valueOf(parser.getAttributeValue(null, "edad")));
+
+                            personas.add(persona);
+                        }
+
+                        break;
+
+                    case XmlPullParser.END_TAG:
+                        break;
+
+                    case XmlPullParser.END_DOCUMENT:
+                        break;
+                }
+
+                try {
+                    event = parser.next();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+        } catch (XmlPullParserException e) {
+            e.printStackTrace();
+        }
+
+        return personas;
+    }
+
 }
