@@ -10,6 +10,9 @@ import android.util.Xml;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -74,19 +77,65 @@ public class MainActivity extends AppCompatActivity implements Handler.Callback 
         if (msg.arg1 == 0) {
             texto.setText((String) msg.obj);
 
-            List<Persona> personas = parserXml((String) msg.obj);
+            //List<Persona> personas = parserXml((String) msg.obj);
 
-            Log.d("prueba debug parser xml", "inicio");
+//            Log.d("prueba debug parser xml", "inicio");
+//            for (Persona p : personas) {
+//                Log.d("prueba debug parser xml", p.toString());
+//            }
+//            Log.d("prueba debug parser xml", "fin");
+
+            String jSONPersonas = new String("{personas:[{persona:{nombre:'Juan',edad=25}},{persona:{nombre:'Pedro',edad=22}},{persona:{nombre:'Roberto',edad=33}}]}");
+
+            //String jSONPersonas = "{personas:[{nombre:'Juan',edad=25},{nombre:'Pedro',edad=22},{nombre:'Roberto',edad=33}]}";
+
+            Log.d("prueba parser json", "inicio");
+            List<Persona> personas = parserJSON(jSONPersonas);
+
             for (Persona p : personas) {
                 Log.d("prueba debug parser xml", p.toString());
             }
-            Log.d("prueba debug parser xml", "fin");
+            Log.d("prueba parser json", "fin");
+
+            //"{Personas:[{Persona:{nombre:'Juan',edad=25}},{Persona:{nombre:'Pedro',edad=22}},{Persona:{nombre:'Roberto',edad=33}}]};)
         }
+
         if (msg.arg1 == 1) {
             byte[] bites = (byte[]) msg.obj;
             imagen.setImageBitmap(BitmapFactory.decodeByteArray(bites, 0, bites.length));
         }
         return false;
+    }
+
+    public List<Persona> parserJSON(String json) {
+        List<Persona> personas = new ArrayList<Persona>();
+
+        // parseo a JSON
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = new JSONObject(json);
+            JSONArray jPersonas = jsonObject.getJSONArray("personas");
+
+            //Log.d("prueba debug parser xml", String.valueOf(jPersonas.length()));
+
+            for (int i = 0; i < jPersonas.length(); i++) {
+                JSONObject jPersona = jPersonas.getJSONObject(i).getJSONObject("persona");
+
+                //Log.d("prueba debug parser xml", "tag persona encontrado");
+
+                Persona persona = new Persona();
+
+                persona.setNombre(jPersona.getString("nombre"));
+                persona.setEdad(jPersona.getInt("edad"));
+
+                personas.add(persona);
+            }
+
+        } catch (JSONException e1) {
+            e1.printStackTrace();
+        }
+
+        return personas;
     }
 
     public List<Persona> parserXml(String xml) {
@@ -109,9 +158,9 @@ public class MainActivity extends AppCompatActivity implements Handler.Callback 
                         break;
 
                     case XmlPullParser.START_TAG:
-                        tag= parser.getName();
+                        tag = parser.getName();
 
-                        if (tag.equals("Persona")){
+                        if (tag.equals("Persona")) {
                             //Log.d("prueba debug parser xml", "tag persona encontrado");
                             Persona persona = new Persona();
 
